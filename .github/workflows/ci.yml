@@ -1,0 +1,279 @@
+# Continuous integration for the template itself.
+#
+# Three jobs, each guarding a different way this repository can break:
+#
+#   build     the solution still compiles, with warnings treated as failures
+#   template  "dotnet new" still produces a project that compiles, both with and
+#             without the sample feature
+#   docker    a clean checkout still produces a WORKING api, not just a running one
+#
+# The docker job exists because of a real failure: migrations were gitignored, so a
+# clone started with an empty database. Both containers reported healthy and Swagger
+# opened, while every data endpoint returned 500. The login and product checks below
+# are what catch that, because they need real tables and seeded rows.
+
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:
+
+env:
+  DOTNET_VERSION: "10.0.x"
+  DOTNET_NOLOGO: "true"
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: "true"
+  DOTNET_CLI_TELEMETRY_OPTOUT: "true"
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # 1. BUILD — does the solution still compile cleanly?
+  # ---------------------------------------------------------------------------
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Restore
+        run: dotnet restore MeydanCleanApi.Template.slnx
+
+      # -warnaserror because the repository builds with zero warnings today. Anything
+      # new therefore fails here rather than accumulating quietly.
+      - name: Build
+        run: dotnet build MeydanCleanApi.Template.slnx --configuration Release --no-restore -warnaserror
+
+      # No test project exists yet. This step stays green until one is added, then
+      # starts running it without any change to this file.
+      - name: Test
+        run: |
+          projects=$(find . -name "*Tests*.csproj" -o -name "*.Tests.csproj" | head -1)
+          if [ -n "$projects" ]; then
+            dotnet test MeydanCleanApi.Template.slnx --configuration Release --no-build --verbosity normal
+          else
+            echo "No test project found. Add one and this step runs it automatically."
+          fi
+
+  # ---------------------------------------------------------------------------
+  # 2. TEMPLATE — does "dotnet new" still produce a project that compiles?
+  # ---------------------------------------------------------------------------
+  # Both variants are built. The no-samples variant is the one that breaks quietly:
+  # removing the sample feature can leave a dangling reference that the full variant
+  # never reveals.
+  template:
+    name: Template scaffolding
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: with samples
+            args: ""
+          - name: without samples
+            args: "--IncludeSamples false"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # A project generated from this template keeps this workflow but loses
+      # .template.config, so there is nothing to scaffold there. Skipping leaves the
+      # build and docker jobs useful in generated projects instead of failing them.
+      - name: Is this the template repository?
+        id: check
+        run: |
+          if [ -d .template.config ]; then
+            echo "template=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "template=false" >> "$GITHUB_OUTPUT"
+            echo "No .template.config here, so this is a generated project. Skipping."
+          fi
+
+      - name: Set up .NET
+        if: steps.check.outputs.template == 'true'
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Install the template
+        if: steps.check.outputs.template == 'true'
+        run: dotnet new install .
+
+      - name: Create a project (${{ matrix.name }})
+        if: steps.check.outputs.template == 'true'
+        run: dotnet new meydanclean -n Acme.Shop -o /tmp/scaffold ${{ matrix.args }}
+
+      - name: Build the generated project
+        if: steps.check.outputs.template == 'true'
+        run: dotnet build /tmp/scaffold/Acme.Shop.slnx --configuration Release -warnaserror
+
+      # The generated project must carry the new name everywhere, and must not carry
+      # anything that belongs only to this repository.
+      - name: Check the generated output
+        if: steps.check.outputs.template == 'true'
+        run: |
+          cd /tmp/scaffold
+          fail=0
+
+          for expected in Acme.Shop.Domain Acme.Shop.Application Acme.Shop.Infrastructure \
+                          Acme.Shop.Persistence Acme.Shop.WebApi Acme.Shop.slnx; do
+            [ -e "$expected" ] || { echo "::error::missing from the generated project: $expected"; fail=1; }
+          done
+
+          # .env holds real keys on a developer machine. It must never be copied out.
+          if [ -e .env ]; then
+            echo "::error::.env was copied into the generated project"
+            fail=1
+          fi
+
+          # Migrations must come from the new domain model, not be inherited.
+          if [ -d Acme.Shop.Persistence/Migrations ]; then
+            echo "::error::Migrations were copied into the generated project"
+            fail=1
+          fi
+
+          # Nothing should still be named after the template.
+          leftovers=$(grep -rl "MeydanCleanApi" --include="*.cs" --include="*.csproj" --include="*.json" . 2>/dev/null | grep -v "/obj/" | grep -v "/bin/" || true)
+          if [ -n "$leftovers" ]; then
+            echo "::error::files still referencing the template name:"
+            echo "$leftovers"
+            fail=1
+          fi
+
+          exit $fail
+
+  # ---------------------------------------------------------------------------
+  # 3. DOCKER — does a clean checkout produce a WORKING api?
+  # ---------------------------------------------------------------------------
+  docker:
+    name: Docker smoke test
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # .env is gitignored, so CI creates it the same way a new developer does.
+      - name: Create .env from the template
+        run: cp .env.example .env
+
+      - name: Start the stack
+        run: docker compose up -d --build
+
+      # depends_on already waits for the database, so this is really waiting for the
+      # api health check, which queries a seeded table and therefore proves the schema
+      # exists rather than only that the process started.
+      - name: Wait for healthy
+        run: |
+          for i in $(seq 1 60); do
+            status=$(docker compose ps --format '{{.Service}}:{{.Status}}' | grep '^api:' || true)
+            case "$status" in
+              *"(healthy)"*)   echo "api healthy after $((i * 5))s"; exit 0 ;;
+              *"(unhealthy)"*) echo "::error::api reported unhealthy"; exit 1 ;;
+            esac
+            sleep 5
+          done
+          echo "::error::api never became healthy"
+          exit 1
+
+      - name: Check the endpoints
+        run: |
+          base=http://localhost:5080
+          fail=0
+
+          check() {
+            actual=$(curl -s -o /dev/null -w "%{http_code}" --max-time 15 "$2")
+            if [ "$actual" = "$1" ]; then
+              echo "  ok    $2 -> $actual"
+            else
+              echo "::error::$2 expected $1 but got $actual"
+              fail=1
+            fi
+          }
+
+          # Liveness runs no checks, readiness queries the database.
+          check 200 "$base/health"
+          check 200 "$base/health/ready"
+          # Diagnostics leak component names, so they require the Admin policy.
+          check 401 "$base/health/details"
+          check 200 "$base/swagger/index.html"
+
+          # These need real tables. They are what an empty database fails.
+          cultures=$(curl -s --max-time 15 "$base/api/v1/cultures")
+          case "$cultures" in
+            *'"isSucceed":true'*) echo "  ok    cultures returned data" ;;
+            *) echo "::error::cultures did not return data: $cultures"; fail=1 ;;
+          esac
+
+          products=$(curl -s --max-time 15 "$base/api/v1/sampleproducts?pageNumber=1&pageSize=5")
+          case "$products" in
+            *'"totalCount":1'*) echo "  ok    seeded sample product found" ;;
+            *) echo "::error::seeding did not run: $products"; fail=1 ;;
+          esac
+
+          exit $fail
+
+      # Proves migrations ran, the admin was seeded, and a token is actually issued.
+      # This is the single strongest signal that the checkout is genuinely working.
+      - name: Check login and an authorised request
+        run: |
+          base=http://localhost:5080
+          fail=0
+
+          body='{"email":"admin@example.com","password":"Adm1n!Local_2026"}'
+          response=$(curl -s --max-time 15 -H 'Content-Type: application/json' -d "$body" "$base/api/v1/auth/login")
+
+          token=$(echo "$response" | sed -n 's/.*"accessToken":"\([^"]*\)".*/\1/p')
+          if [ -z "$token" ]; then
+            echo "::error::login did not return a token: $response"
+            exit 1
+          fi
+          echo "  ok    login issued a token"
+
+          # A wrong password must be rejected, not accepted or 500.
+          wrong=$(curl -s -o /dev/null -w '%{http_code}' --max-time 15 \
+            -H 'Content-Type: application/json' \
+            -d '{"email":"admin@example.com","password":"definitely-wrong"}' "$base/api/v1/auth/login")
+          [ "$wrong" = "401" ] || { echo "::error::wrong password returned $wrong, expected 401"; fail=1; }
+
+          # The admin token must open the diagnostics endpoint that was 401 anonymously.
+          details=$(curl -s -o /dev/null -w '%{http_code}' --max-time 15 \
+            -H "Authorization: Bearer $token" "$base/health/details")
+          [ "$details" = "200" ] || { echo "::error::/health/details with an admin token returned $details"; fail=1; }
+
+          exit $fail
+
+      # An unhandled exception means a bug even when the status codes looked right.
+      - name: Check for unhandled exceptions
+        run: |
+          crashes=$(docker compose logs api 2>&1 | grep -c "Unhandled System Crash" || true)
+          if [ "$crashes" != "0" ]; then
+            echo "::error::$crashes unhandled exception(s) in the api log"
+            exit 1
+          fi
+          echo "  ok    no unhandled exceptions"
+
+      # Only on failure, and this is usually the whole diagnosis.
+      - name: Dump logs on failure
+        if: failure()
+        run: |
+          echo "===== docker compose ps ====="
+          docker compose ps
+          echo "===== api ====="
+          docker compose logs --no-color api
+          echo "===== db ====="
+          docker compose logs --no-color db
+
+      - name: Tear down
+        if: always()
+        run: docker compose down -v

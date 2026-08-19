@@ -1,0 +1,227 @@
+# =============================================================================
+# MeydanCleanApi.Template — run the API and its database in Docker
+#
+#   db        PostgreSQL 18            data kept in a named volume
+#   api       ASP.NET Core 10 Web API  built from the Dockerfile next to this file
+#   pgadmin   database browser         optional, only starts with --profile tools
+#
+# Start everything:   docker compose up -d --build
+# Full guide:         DOCKER.md
+#
+# -----------------------------------------------------------------------------
+# HOW TO READ THIS FILE
+# -----------------------------------------------------------------------------
+# Each line under "environment:" looks like this:
+#
+#     CONTAINER_VARIABLE: ${ENV_FILE_VARIABLE}
+#     ^ the name the app reads   ^ the name you set in .env
+#
+# The left name is fixed by the app. Two underscores mean "go one level deeper",
+# so Tokens__Jwt__Issuer fills the Tokens:Jwt:Issuer setting. The right name is
+# ours, and you can change it.
+#
+# ":?" means the value is required. Compose stops and tells you which key is
+#      missing, instead of the container failing later for an unclear reason.
+# ":-" means "use this default when the key is not set".
+#
+# -----------------------------------------------------------------------------
+# WHY POSTGRES RUNS IN A CONTAINER
+# -----------------------------------------------------------------------------
+# Compose cannot start a PostgreSQL that is installed on your computer. Starting
+# that one is a Windows command, and a container cannot reach out and run it. So
+# the database runs as a container here. That is why "docker compose up" needs
+# no preparation.
+#
+# The two do not fight. This one uses port 5433. A PostgreSQL installed on your
+# computer keeps port 5432. You can run both at the same time.
+# =============================================================================
+
+services:
+  # -- 1. DATABASE (PostgreSQL 18) --------------------------------------------
+  db:
+    image: postgres:18-alpine
+
+    environment:
+      POSTGRES_DB: ${DB_NAME:?DB_NAME missing in .env}
+      POSTGRES_USER: ${DB_USER:?DB_USER missing in .env}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD missing in .env}
+
+    volumes:
+      # Keeps the data when you run "docker compose down".
+      # "docker compose down -v" deletes it, and you start from an empty database.
+      #
+      # The path is /var/lib/postgresql, NOT /var/lib/postgresql/data. Postgres 17
+      # and older used the /data path. From 18 the files live in a folder named
+      # after the version, and using the old path stops the container starting.
+      - pgdata:/var/lib/postgresql
+
+    ports:
+      # Lets you connect from your computer with pgAdmin, DataGrip or dotnet ef.
+      # 5433 by default, so a PostgreSQL installed on your computer keeps 5432.
+      - "${COMPOSE_DB_PORT:-5433}:5432"
+
+    restart: unless-stopped
+
+    # The api service waits for this. pg_isready only succeeds once the database
+    # really accepts connections, so the API never starts too early and fail for
+    # a reason that looks like a bug in your code.
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 5s
+      timeout: 5s
+      start_period: 10s
+      retries: 10
+
+  # -- 2. API (ASP.NET Core 10) -----------------------------------------------
+  api:
+    build:
+      # The dot means "this folder". The Dockerfile sits next to this file.
+      context: .
+      dockerfile: Dockerfile
+
+    environment:
+      # -- Runtime ------------------------------------------------------------
+      ASPNETCORE_ENVIRONMENT: ${API_ENVIRONMENT:-Development}
+      # Fixed. The Dockerfile opens port 8080 and the health check below uses it.
+      ASPNETCORE_HTTP_PORTS: 8080
+
+      # -- Database -----------------------------------------------------------
+      # "db" is the service name above. Docker turns it into an address.
+      # The port is 5432, the port INSIDE Docker. COMPOSE_DB_PORT is only about
+      # how your computer reaches the database from outside.
+      #
+      # Built from the same DB_ values the database uses, so the two can never
+      # disagree about the password.
+      ConnectionStrings__DefaultConnection: "Host=db;Port=5432;Database=${DB_NAME};Username=${DB_USER};Password=${DB_PASSWORD}"
+
+      # -- JWT signing keys ---------------------------------------------------
+      # Required. The app checks these at startup and stops if one is missing, so
+      # a typo shows up right away instead of creating tokens nothing can read.
+      #
+      # Passed here instead of using appsettings.Development.json, because
+      # .dockerignore keeps that file out of the image on purpose. The container
+      # is set up the same way a real server would be.
+      Tokens__Jwt__JwtSecurityKey: ${API_JWT_ACCESS_KEY:?API_JWT_ACCESS_KEY missing in .env}
+      Tokens__Jwt__RefreshSecurityKey: ${API_JWT_REFRESH_KEY:?API_JWT_REFRESH_KEY missing in .env}
+      Tokens__Jwt__Issuer: ${API_JWT_ISSUER:-MeydanCleanApi}
+      Tokens__Jwt__Audience: ${API_JWT_AUDIENCE:-MeydanCleanApi.Clients}
+      Tokens__Jwt__AccessTokenExpiryMinutes: ${API_JWT_ACCESS_MINUTES:-15}
+      Tokens__Jwt__RefreshTokenExpirationDays: ${API_JWT_REFRESH_DAYS:-7}
+
+      # -- CORS ---------------------------------------------------------------
+      # A list needs one numbered key per item. appsettings.json ships an empty
+      # list, so without these no website in a browser can call the API.
+      CorsOrigins__0: ${API_CORS_ORIGIN_0:-http://localhost:3000}
+      CorsOrigins__1: ${API_CORS_ORIGIN_1:-http://localhost:5173}
+
+      # -- First admin user ---------------------------------------------------
+      # Empty is fine and means "do not create one". The app only creates it when
+      # the users table is completely empty, so restarts never change anything.
+      SeedData__SuperAdminEmail: ${API_SEED_ADMIN_EMAIL:-}
+      SeedData__SuperAdminPassword: ${API_SEED_ADMIN_PASSWORD:-}
+
+      # -- Storage: local disk ------------------------------------------------
+      # This path is inside the container, and the volume below is mounted there.
+      # It is kept out of wwwroot on purpose: files under wwwroot are served to
+      # anyone, with no login check.
+      Storage__Local__RootDirectory: App_Data/uploads
+      Storage__Local__BaseUrl: /api/v1/files
+
+      # -- Storage: Supabase (optional) ---------------------------------------
+      # Empty by default. Supabase is only set up when something asks for it, so
+      # empty values do not break local uploads or any other endpoint.
+      Storage__Supabase__Url: ${API_SUPABASE_URL:-}
+      Storage__Supabase__ApiKey: ${API_SUPABASE_API_KEY:-}
+      Storage__Supabase__Bucket: ${API_SUPABASE_BUCKET:-uploads}
+      Storage__Supabase__DownloadUrlExpiryMinute: ${API_SUPABASE_URL_EXPIRY_MINUTES:-60}
+
+      # -- Google sign-in (optional) ------------------------------------------
+      # Empty means Google sign-in is never set up. Email and password login
+      # still works normally.
+      Authentication__Google__ClientId: ${API_GOOGLE_CLIENT_ID:-}
+
+    volumes:
+      # Uploaded files live here. Without this volume, "docker compose down"
+      # throws the files away while their rows stay in the database, so the
+      # database would point at files that no longer exist.
+      #
+      # The Dockerfile gives /app/App_Data to the "app" user before switching to
+      # it. Docker copies that ownership into a new volume, which is what lets
+      # the app write here without being root.
+      - uploads:/app/App_Data/uploads
+
+      # Keys ASP.NET Core uses to protect small pieces of data.
+      #
+      # This template does not use them yet. Login uses JWT, which is signed with
+      # the Tokens__Jwt__ keys above and does not depend on these at all.
+      #
+      # They start to matter as soon as you add password reset, email confirmation,
+      # two-factor codes, cookie login or antiforgery. Those features encrypt their
+      # tokens with these keys. Without this volume the keys are recreated every
+      # time the container is replaced, and every link already sent to a user stops
+      # working. That is a confusing bug to find later, and the volume is free, so
+      # it is here from the start.
+      - dpkeys:/home/app/.aspnet/DataProtection-Keys
+
+    ports:
+      - "${COMPOSE_API_PORT:-5080}:8080"
+
+    depends_on:
+      db:
+        condition: service_healthy
+
+    restart: unless-stopped
+
+    # Calls the readiness endpoint, which really asks the database a question. So
+    # "healthy" means the API can serve data, not just that it started. It uses
+    # bash because the .NET runtime image has no curl and no wget.
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "bash",
+          "-c",
+          'exec 3<>/dev/tcp/127.0.0.1/8080 && printf "GET /health/ready HTTP/1.0\r\n\r\n" >&3 && head -1 <&3 | grep -q " 200 "',
+        ]
+      interval: 10s
+      timeout: 5s
+      start_period: 40s
+      retries: 5
+
+  # -- 3. PGADMIN (optional) --------------------------------------------------
+  # "docker compose up" does NOT start this. Start it only when you want it:
+  #     docker compose --profile tools up -d
+  # It is a help tool, not part of the app, and it uses a few hundred MB of memory.
+  pgadmin:
+    image: dpage/pgadmin4:latest
+
+    profiles: ["tools"]
+
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@example.com}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-pgadmin}
+      # Skips the extra password question at every login. Fine here, because
+      # nobody outside your computer can reach this.
+      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: "False"
+
+    volumes:
+      - pgadmin:/var/lib/pgadmin
+
+    ports:
+      - "${COMPOSE_PGADMIN_PORT:-5050}:80"
+
+    depends_on:
+      db:
+        condition: service_healthy
+
+    restart: unless-stopped
+
+volumes:
+  # Database files. Kept by "down", deleted by "down -v".
+  pgdata:
+  # Uploaded files, kept outside the container for the same reason.
+  uploads:
+  # Cookie protection keys, so logins keep working after the container is replaced.
+  dpkeys:
+  # pgAdmin's saved settings.
+  pgadmin:

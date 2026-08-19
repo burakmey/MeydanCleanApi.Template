@@ -1,0 +1,14 @@
+{
+  "profiles": {
+    "MeydanCleanApi.Template.WebApi": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "//launchUrl": "Open Swagger, not the site root. The root is not an endpoint, and the fallback authorization policy answers unknown paths with 401, so without this the first thing you see is an error page.",
+      "launchUrl": "swagger",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "applicationUrl": "https://localhost:58168;http://localhost:58169"
+    }
+  }
+}

@@ -1,0 +1,51 @@
+# Build artefacts. They are rebuilt inside the image, and copying host binaries in can
+# poison the build with objects compiled against a different SDK.
+bin/
+obj/
+*.user
+*.lock
+.git
+.gitignore
+.vs/
+
+# Template tooling. Only meaningful to 'dotnet new', never to a running container.
+.template.config/
+
+# Runtime output. Logs belong on the host or a log sink, and uploads belong on a mounted
+# volume. Copying either one in bakes stale data into every image.
+**/Logs/
+**/App_Data/
+
+# ── Environment-specific settings ────────────────────────────────────────────
+#
+# Excluded deliberately, for two reasons.
+#
+# 1. THEY CONTAIN SECRETS. `COPY . .` does not consult .gitignore, so without these lines
+#    a gitignored file full of real connection strings and signing keys is baked into the
+#    image and travels with it to any registry.
+#
+# 2. THEY HIDE DEPLOYMENT FAILURES. Hosting platforms build from the git repository, where
+#    these files do not exist. Leaving them in the local image means the container starts
+#    here using values that will simply be absent there: the API boots on your machine and
+#    exits on the host.
+#
+# With them excluded, the local container is configured exactly the way the deployed one is,
+# entirely through environment variables. If something is missing, it fails here first.
+#
+# This affects the CONTAINER only. `dotnet run` on the host still reads
+# appsettings.Development.json as usual.
+#
+# The `**/` prefix is required, not decorative: .dockerignore patterns are matched against
+# the path relative to the build context root, and these files live one level down in the
+# WebApi project. A bare filename matches nothing and silently ships them.
+**/appsettings.Development.json
+**/appsettings.Production.json
+**/appsettings.Staging.json
+**/appsettings.*.local.json
+
+# Docker files themselves. The .env holds real passwords and keys, and "COPY . ."
+# would bake them into the image, where anyone with the image could read them.
+# The compose file and the guide are of no use inside a running container.
+.env
+docker-compose.yml
+DOCKER.md

@@ -1,0 +1,46 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFramework>net10.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<GenerateDocumentationFile>true</GenerateDocumentationFile>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\MeydanCleanApi.Template.Domain\MeydanCleanApi.Template.Domain.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<!--
+		  Nests each .resx under the marker class it belongs to in Solution Explorer, so the
+		  translations sit with the type that resolves them instead of in a separate tree.
+		  This is display only: IStringLocalizer<T> finds the file by name either way.
+		-->
+		<EmbeddedResource Update="Localization\ApiMessages.resx">
+			<DependentUpon>ApiMessages.cs</DependentUpon>
+		</EmbeddedResource>
+		<EmbeddedResource Update="Localization\ApiMessages.tr.resx">
+			<DependentUpon>ApiMessages.cs</DependentUpon>
+		</EmbeddedResource>
+		<EmbeddedResource Update="Localization\ErrorMessages.resx">
+			<DependentUpon>ErrorMessages.cs</DependentUpon>
+		</EmbeddedResource>
+		<EmbeddedResource Update="Localization\ErrorMessages.tr.resx">
+			<DependentUpon>ErrorMessages.cs</DependentUpon>
+		</EmbeddedResource>
+		<EmbeddedResource Update="Localization\ValidationMessages.resx">
+			<DependentUpon>ValidationMessages.cs</DependentUpon>
+		</EmbeddedResource>
+		<EmbeddedResource Update="Localization\ValidationMessages.tr.resx">
+			<DependentUpon>ValidationMessages.cs</DependentUpon>
+		</EmbeddedResource>
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="FluentValidation" Version="12.1.1" />
+		<PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="12.1.1" />
+		<PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.11" />
+	</ItemGroup>
+
+</Project>

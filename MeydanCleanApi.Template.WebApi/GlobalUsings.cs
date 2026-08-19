@@ -1,0 +1,10 @@
+global using MeydanCleanApi.Template.Application.Abstractions.Localization;
+global using MeydanCleanApi.Template.Application.Abstractions.Messaging;
+global using MeydanCleanApi.Template.Application.Abstractions.Tracing;
+global using MeydanCleanApi.Template.Domain.Constants;
+global using MeydanCleanApi.Template.Domain.Enums;
+global using MeydanCleanApi.Template.Domain.Exceptions;
+global using MeydanCleanApi.Template.Domain.Exceptions.Base;
+global using MeydanCleanApi.Template.Domain.Models;
+global using Microsoft.AspNetCore.Authorization;
+global using Microsoft.AspNetCore.Mvc;

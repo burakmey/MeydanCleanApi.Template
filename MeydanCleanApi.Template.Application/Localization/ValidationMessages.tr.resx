@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="VAL_ID_REQUIRED" xml:space="preserve">
+    <value>Kayıt numarası gerekli.</value>
+  </data>
+  <data name="VAL_SEARCH_TERM_TOO_LONG" xml:space="preserve">
+    <value>Arama metni çok uzun.</value>
+  </data>
+  <data name="VAL_CATEGORY_REQUIRED" xml:space="preserve">
+    <value>Lütfen bir kategori seçin.</value>
+  </data>
+  <data name="VAL_NAME_REQUIRED" xml:space="preserve">
+    <value>Ad alanı zorunlu.</value>
+  </data>
+  <data name="VAL_NAME_MAX_LENGTH" xml:space="preserve">
+    <value>Ad alanı çok uzun.</value>
+  </data>
+  <data name="VAL_TITLE_REQUIRED" xml:space="preserve">
+    <value>Başlık alanı zorunlu.</value>
+  </data>
+  <data name="VAL_TITLE_MAX_LENGTH" xml:space="preserve">
+    <value>Başlık alanı çok uzun.</value>
+  </data>
+  <data name="VAL_PRICE_INVALID" xml:space="preserve">
+    <value>Fiyat sıfırdan büyük olmalı.</value>
+  </data>
+  <data name="VAL_PAGE_NUMBER_INVALID" xml:space="preserve">
+    <value>Sayfa numarası en az 1 olmalı.</value>
+  </data>
+  <data name="VAL_PAGE_SIZE_INVALID" xml:space="preserve">
+    <value>Sayfa boyutu izin verilen aralığın dışında.</value>
+  </data>
+  <data name="VAL_FILE_NAME_REQUIRED" xml:space="preserve">
+    <value>Dosya adı zorunlu.</value>
+  </data>
+  <data name="VAL_FILE_SIZE_INVALID" xml:space="preserve">
+    <value>Dosya boyutu sıfırdan büyük olmalı.</value>
+  </data>
+  <data name="VAL_FILE_SIZE_TOO_LARGE" xml:space="preserve">
+    <value>Dosya izin verilen boyuttan büyük.</value>
+  </data>
+  <data name="VAL_FILE_CONTAINER_INVALID" xml:space="preserve">
+    <value>Seçilen depolama klasörüne izin verilmiyor.</value>
+  </data>
+  <data name="VAL_FILE_SUBFOLDER_INVALID" xml:space="preserve">
+    <value>Alt klasör adı izin verilmeyen karakterler içeriyor.</value>
+  </data>
+  <data name="VAL_FILE_EXTENSION_INVALID" xml:space="preserve">
+    <value>Bu dosya türüne izin verilmiyor.</value>
+  </data>
+  <data name="VAL_FILE_CONTENT_TYPE_REQUIRED" xml:space="preserve">
+    <value>Dosya içerik türü zorunlu.</value>
+  </data>
+  <data name="VAL_EMAIL_REQUIRED" xml:space="preserve">
+    <value>E-posta adresi zorunlu.</value>
+  </data>
+  <data name="VAL_EMAIL_INVALID" xml:space="preserve">
+    <value>Lütfen geçerli bir e-posta adresi girin.</value>
+  </data>
+  <data name="VAL_PASSWORD_REQUIRED" xml:space="preserve">
+    <value>Şifre zorunlu.</value>
+  </data>
+  <data name="VAL_FILE_PURPOSE_INVALID" xml:space="preserve">
+    <value>Seçilen dosya türü geçersiz.</value>
+  </data>
+  <data name="VAL_SORT_ORDER_INVALID" xml:space="preserve">
+    <value>Sıralama değeri negatif olamaz.</value>
+  </data>
+</root>

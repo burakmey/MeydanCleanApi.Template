@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFramework>net10.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<GenerateDocumentationFile>true</GenerateDocumentationFile>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\MeydanCleanApi.Template.Application\MeydanCleanApi.Template.Application.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<!--
+		  Gives access to IHttpContextAccessor and CookieOptions from the shared framework.
+		  Do not replace this with the standalone Microsoft.AspNetCore.Http.Abstractions package:
+		  that one stopped at version 2.x and mixing it into a .NET 10 build causes duplicate types.
+		-->
+		<FrameworkReference Include="Microsoft.AspNetCore.App" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<!-- IMemoryCache and IStringLocalizer come from the shared framework referenced above. -->
+		<PackageReference Include="Microsoft.IdentityModel.Protocols.OpenIdConnect" Version="8.22.0" />
+		<PackageReference Include="Supabase" Version="1.6.0" />
+	</ItemGroup>
+
+</Project>

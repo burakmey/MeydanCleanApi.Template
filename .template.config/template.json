@@ -1,0 +1,105 @@
+{
+  "$schema": "http://json.schemastore.org/template",
+  "author": "burak",
+  "classifications": [ "Web", "WebAPI", "Clean Architecture", "CQRS", "PostgreSQL" ],
+  "identity": "MeydanCleanApi.Template.CleanWebApi",
+  "name": "Meydan Clean Architecture Web API",
+  "shortName": "meydanclean",
+  "description": "ASP.NET Core Web API with Clean Architecture layering, CQRS without MediatR, EF Core on PostgreSQL, ASP.NET Core Identity with JWT and refresh token rotation, direct-to-cloud file storage, and resx localization.",
+  "tags": {
+    "language": "C#",
+    "type": "project"
+  },
+  "sourceName": "MeydanCleanApi.Template",
+  "preferNameDirectory": true,
+  "defaultName": "MyCleanApi",
+
+  "symbols": {
+    "Framework": {
+      "type": "parameter",
+      "description": "The target framework for the project.",
+      "datatype": "choice",
+      "choices": [
+        { "choice": "net10.0", "description": "Target net10.0" }
+      ],
+      "replaces": "net10.0",
+      "defaultValue": "net10.0"
+    },
+    "DatabaseName": {
+      "type": "parameter",
+      "datatype": "string",
+      "description": "Database name written into the sample connection string.",
+      "defaultValue": "meydanclean_db",
+      "replaces": "meydanclean_db"
+    },
+    "UserSecretsId": {
+      "type": "generated",
+      "generator": "guid",
+      "replaces": "meydan-clean-api-template",
+      "parameters": {
+        "defaultFormat": "D"
+      }
+    },
+    "IncludeSamples": {
+      "type": "parameter",
+      "datatype": "bool",
+      "description": "Include the SampleProduct reference feature that demonstrates the full CQRS flow. Turn this off for a bare starting point.",
+      "defaultValue": "true"
+    },
+    "SkipRestore": {
+      "type": "parameter",
+      "datatype": "bool",
+      "description": "If specified, skips the automatic restore of the project on create.",
+      "defaultValue": "false"
+    }
+  },
+
+  "sources": [
+    {
+      "modifiers": [
+        {
+          "condition": "(!IncludeSamples)",
+          "exclude": [
+            "**/Features/Samples/**",
+            "**/Entities/Samples/**",
+            "**/Configurations/Samples/**",
+            "**/DTOs/Samples/**",
+            "**/Controllers/Samples/**",
+            "**/Common/Extensions/SampleProductMappingExtensions.cs",
+            "**/Seeding/SampleProductSeederService.cs"
+          ]
+        }
+      ],
+      "exclude": [
+        "**/[Bb]in/**",
+        "**/[Oo]bj/**",
+        "**/.vs/**",
+        "**/.git/**",
+        "**/*.user",
+        "**/App_Data/**",
+        "**/Logs/**",
+        ".env",
+        "**/Migrations/**",
+        ".template.config/**"
+      ]
+    }
+  ],
+
+  "primaryOutputs": [
+    { "path": "MeydanCleanApi.Template.Domain/MeydanCleanApi.Template.Domain.csproj" },
+    { "path": "MeydanCleanApi.Template.Application/MeydanCleanApi.Template.Application.csproj" },
+    { "path": "MeydanCleanApi.Template.Infrastructure/MeydanCleanApi.Template.Infrastructure.csproj" },
+    { "path": "MeydanCleanApi.Template.Persistence/MeydanCleanApi.Template.Persistence.csproj" },
+    { "path": "MeydanCleanApi.Template.WebApi/MeydanCleanApi.Template.WebApi.csproj" }
+  ],
+
+  "postActions": [
+    {
+      "condition": "(!SkipRestore)",
+      "description": "Restore NuGet packages required by this project.",
+      "manualInstructions": [ { "text": "Run 'dotnet restore'" } ],
+      "actionId": "210D431B-A78B-4D2F-B762-4ED3E3EA9025",
+      "continueOnError": true
+    }
+  ]
+}

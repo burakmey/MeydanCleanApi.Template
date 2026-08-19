@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="ERR_INTERNAL" xml:space="preserve">
+    <value>Beklenmeyen bir hata oluştu. Lütfen daha sonra tekrar deneyin.</value>
+  </data>
+  <data name="ERR_ID_NOT_FOUND" xml:space="preserve">
+    <value>{0} bulunamadı.</value>
+  </data>
+  <data name="ERR_VALIDATION" xml:space="preserve">
+    <value>Bir veya daha fazla alan geçersiz.</value>
+  </data>
+  <data name="ERR_UNAUTHORIZED" xml:space="preserve">
+    <value>Bu işlem için giriş yapmanız gerekiyor.</value>
+  </data>
+  <data name="ERR_FORBIDDEN" xml:space="preserve">
+    <value>Bu işlemi yapma yetkiniz yok.</value>
+  </data>
+  <data name="ERR_CONFLICT" xml:space="preserve">
+    <value>Bu işlem kaydın mevcut durumuyla çakışıyor.</value>
+  </data>
+  <data name="ERR_INVALID_CREDENTIALS" xml:space="preserve">
+    <value>E-posta veya şifre hatalı.</value>
+  </data>
+  <data name="ERR_SESSION_EXPIRED" xml:space="preserve">
+    <value>Oturumunuz sona erdi. Lütfen tekrar giriş yapın.</value>
+  </data>
+  <data name="ERR_TOO_MANY_REQUESTS" xml:space="preserve">
+    <value>Çok fazla istek gönderildi. Lütfen biraz bekleyip tekrar deneyin.</value>
+  </data>
+  <data name="ERR_FILE_NOT_UPLOADED" xml:space="preserve">
+    <value>Dosya henüz depolama alanına yüklenmedi.</value>
+  </data>
+  <data name="ERR_SUPER_ADMIN_PROTECTED" xml:space="preserve">
+    <value>SuperAdmin hesapları değiştirilemez.</value>
+  </data>
+  <data name="ERR_ROLE_NOT_ASSIGNABLE" xml:space="preserve">
+    <value>Bu rol atanamaz.</value>
+  </data>
+  <data name="ERR_EMAIL_IN_USE" xml:space="preserve">
+    <value>Bu e-posta adresi zaten kullanılıyor.</value>
+  </data>
+  <data name="ERR_CONFIGURATION_MISSING" xml:space="preserve">
+    <value>Gerekli '{0}' ayarı eksik.</value>
+  </data>
+  <data name="ERR_CONFIGURATION_INVALID" xml:space="preserve">
+    <value>'{0}' ayarı geçersiz.</value>
+  </data>
+  <data name="ERR_FILE_IN_USE" xml:space="preserve">
+    <value>Bu dosya kullanımda olduğu için silinemez.</value>
+  </data>
+  <data name="ERR_EXTERNAL_AUTH_PROVIDER_NOT_SUPPORTED" xml:space="preserve">
+    <value>Bu giriş sağlayıcısı desteklenmiyor.</value>
+  </data>
+  <data name="ERR_EXTERNAL_AUTH_SERVICE_UNAVAILABLE" xml:space="preserve">
+    <value>Giriş sağlayıcısına şu anda ulaşılamıyor. Lütfen tekrar deneyin.</value>
+  </data>
+  <data name="ERR_EXTERNAL_AUTH_TOKEN_REQUIRED" xml:space="preserve">
+    <value>Sağlayıcı anahtarı gerekli.</value>
+  </data>
+  <data name="ERR_EXTERNAL_AUTH_TOKEN_EXPIRED" xml:space="preserve">
+    <value>Sağlayıcı anahtarının süresi dolmuş.</value>
+  </data>
+  <data name="ERR_EXTERNAL_AUTH_TOKEN_INVALID" xml:space="preserve">
+    <value>Sağlayıcı anahtarı geçersiz.</value>
+  </data>
+  <data name="ERR_EXTERNAL_AUTH_MISSING_CLAIMS" xml:space="preserve">
+    <value>Sağlayıcı gerekli hesap bilgilerini döndürmedi.</value>
+  </data>
+  <data name="ERR_SOFT_DELETE_NOT_SUPPORTED" xml:space="preserve">
+    <value>{0} kaydı pasife alınamaz.</value>
+  </data>
+</root>
