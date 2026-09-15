@@ -10,7 +10,7 @@
 
   <ItemGroup>
     <!-- Narrowest dependency providing AppUser and AppRole identity base types without bringing EF Core into Domain layer -->
-    <PackageReference Include="Microsoft.Extensions.Identity.Stores" Version="10.0.11" />
+    <PackageReference Include="Microsoft.Extensions.Identity.Stores" />
   </ItemGroup>
 
 </Project>

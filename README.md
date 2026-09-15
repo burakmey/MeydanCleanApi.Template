@@ -20,6 +20,8 @@ that layer.
 | Files | Direct-to-storage uploads with presigned URLs; local disk and Supabase providers included |
 | Localization | `.resx` resources in English and Turkish, selected per request |
 | Operations | Serilog, correlation ids, rate limiting, CORS, health checks, settings validated at startup |
+| Tests | xUnit unit tests over the storage signing, correlation ids, tokens, validators and the startup secret guard |
+| Dependencies | Every package version declared once, centrally |
 
 ---
 
@@ -46,6 +48,27 @@ Application     commands, queries, handlers, abstractions            depends on 
 - The EF Core CLI: `dotnet tool install --global dotnet-ef`
 
 Docker replaces the PostgreSQL and EF Core requirements. See [Running in Docker](#running-in-docker).
+
+---
+
+## Package versions
+
+Versions live in [Directory.Packages.props](Directory.Packages.props), not in the project files. A
+project asks for a package by name only:
+
+```xml
+<PackageReference Include="FluentValidation" />
+```
+
+This is Central Package Management, a built-in NuGet feature. It matters here because the same
+Microsoft libraries are referenced from four projects: with a version on each one, a patch bump means
+finding all four, and missing one leaves two versions of the same library resolving against each
+other. NuGet fails the restore if a project declares its own version, so the two cannot disagree
+silently.
+
+To add a package: one `PackageVersion` in that file, one `PackageReference` in the project that needs
+it. To upgrade the Microsoft runtime libraries as a set, edit the `MicrosoftRuntimeVersion` property
+once.
 
 ---
 

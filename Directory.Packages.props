@@ -1,0 +1,69 @@
+<Project>
+
+  <!--
+    Central Package Management. Every version in the solution is declared here once, and the
+    project files ask for packages by name only:
+
+      <PackageReference Include="FluentValidation" />
+
+    A project that still carries its own Version fails the restore with NU1008 rather than
+    quietly disagreeing with this file, so the two cannot drift apart.
+
+    Adding a package means two edits: a PackageVersion here, and a PackageReference in the one
+    project that needs it. Listing it here alone references nothing.
+  -->
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <!--
+      Microsoft ships the runtime libraries below on one schedule, so they move together. Keeping
+      the number in a single property means a patch bump is one edit instead of nine, and a
+      half-finished upgrade that leaves two of them behind stops being possible.
+    -->
+    <MicrosoftRuntimeVersion>10.0.11</MicrosoftRuntimeVersion>
+  </PropertyGroup>
+
+  <ItemGroup Label="Microsoft runtime libraries">
+    <PackageVersion Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="$(MicrosoftRuntimeVersion)" />
+    <PackageVersion Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="$(MicrosoftRuntimeVersion)" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="$(MicrosoftRuntimeVersion)" />
+    <PackageVersion Include="Microsoft.Extensions.Configuration" Version="$(MicrosoftRuntimeVersion)" />
+    <PackageVersion Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="$(MicrosoftRuntimeVersion)" />
+    <PackageVersion Include="Microsoft.Extensions.Configuration.Json" Version="$(MicrosoftRuntimeVersion)" />
+    <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="$(MicrosoftRuntimeVersion)" />
+    <PackageVersion Include="Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore" Version="$(MicrosoftRuntimeVersion)" />
+    <PackageVersion Include="Microsoft.Extensions.Hosting.Abstractions" Version="$(MicrosoftRuntimeVersion)" />
+    <PackageVersion Include="Microsoft.Extensions.Identity.Stores" Version="$(MicrosoftRuntimeVersion)" />
+  </ItemGroup>
+
+  <ItemGroup Label="Database">
+    <!-- Versioned independently of the Microsoft libraries above: Npgsql is its own project. -->
+    <PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.3" />
+  </ItemGroup>
+
+  <ItemGroup Label="Validation">
+    <PackageVersion Include="FluentValidation" Version="12.1.1" />
+    <PackageVersion Include="FluentValidation.DependencyInjectionExtensions" Version="12.1.1" />
+  </ItemGroup>
+
+  <ItemGroup Label="Authentication and storage providers">
+    <PackageVersion Include="Microsoft.IdentityModel.Protocols.OpenIdConnect" Version="8.22.0" />
+    <PackageVersion Include="Supabase" Version="1.6.0" />
+  </ItemGroup>
+
+  <ItemGroup Label="Logging and API documentation">
+    <PackageVersion Include="Serilog.AspNetCore" Version="9.0.0" />
+    <PackageVersion Include="Serilog.Sinks.Console" Version="6.0.0" />
+    <PackageVersion Include="Serilog.Sinks.File" Version="6.0.0" />
+    <PackageVersion Include="Swashbuckle.AspNetCore" Version="7.3.1" />
+  </ItemGroup>
+
+  <ItemGroup Label="Testing">
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.10.0" />
+    <PackageVersion Include="xunit" Version="2.9.3" />
+    <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.5" />
+  </ItemGroup>
+
+</Project>

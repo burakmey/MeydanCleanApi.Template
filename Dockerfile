@@ -30,6 +30,11 @@ WORKDIR /src
 # Docker caches each layer. Source changes far more often than project files, so restoring
 # first means an ordinary code change reuses the cached restore instead of re-downloading
 # every NuGet package.
+#
+# Directory.Packages.props comes with them, and is not optional. Package versions live there
+# rather than in the project files, so a restore that cannot see it fails on every
+# PackageReference for having no version at all.
+COPY ["Directory.Packages.props", "./"]
 COPY ["MeydanCleanApi.Template.WebApi/MeydanCleanApi.Template.WebApi.csproj", "MeydanCleanApi.Template.WebApi/"]
 COPY ["MeydanCleanApi.Template.Application/MeydanCleanApi.Template.Application.csproj", "MeydanCleanApi.Template.Application/"]
 COPY ["MeydanCleanApi.Template.Domain/MeydanCleanApi.Template.Domain.csproj", "MeydanCleanApi.Template.Domain/"]
