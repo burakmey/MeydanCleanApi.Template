@@ -1,0 +1,38 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+    <!--
+      Tests are not a public API, so nothing here needs XML documentation. The other projects
+      generate it and the build treats warnings as errors, which would otherwise demand a
+      doc comment on every test class.
+    -->
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Needed for DefaultHttpContext and the host builder used by the middleware and startup tests. -->
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!--
+      No mocking library yet: every test here builds its subject from real collaborators or a small
+      fake. Add one when a test needs a dependency that cannot be constructed cheaply.
+    -->
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.10.0" />
+    <PackageReference Include="xunit" Version="2.9.3" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="3.1.5" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Domain and Persistence arrive through these. -->
+    <ProjectReference Include="..\MeydanCleanApi.Template.Application\MeydanCleanApi.Template.Application.csproj" />
+    <ProjectReference Include="..\MeydanCleanApi.Template.Infrastructure\MeydanCleanApi.Template.Infrastructure.csproj" />
+    <ProjectReference Include="..\MeydanCleanApi.Template.WebApi\MeydanCleanApi.Template.WebApi.csproj" />
+  </ItemGroup>
+
+</Project>
