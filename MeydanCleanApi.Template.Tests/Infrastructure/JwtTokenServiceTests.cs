@@ -27,8 +27,8 @@ public sealed class JwtTokenServiceTests
         {
             JwtSecurityKey = JwtKey,
             RefreshSecurityKey = refreshKey,
-            Issuer = "MeydanCleanApi.Tests",
-            Audience = "MeydanCleanApi.Tests.Clients",
+            Issuer = "test-issuer",
+            Audience = "test-audience",
             AccessTokenExpiryMinutes = 15,
             RefreshTokenExpirationDays = 7
         });
@@ -83,8 +83,8 @@ public sealed class JwtTokenServiceTests
             {
                 JwtSecurityKey = "a-completely-different-signing-key-32-chars",
                 RefreshSecurityKey = RefreshKey,
-                Issuer = "MeydanCleanApi.Tests",
-                Audience = "MeydanCleanApi.Tests.Clients",
+                Issuer = "test-issuer",
+                Audience = "test-audience",
                 AccessTokenExpiryMinutes = 15,
                 RefreshTokenExpirationDays = 7
             }),
