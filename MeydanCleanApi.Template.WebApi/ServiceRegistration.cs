@@ -9,6 +9,7 @@ using MeydanCleanApi.Template.WebApi.Configurations.Swagger;
 using MeydanCleanApi.Template.WebApi.Middlewares;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 
@@ -69,6 +70,10 @@ public static class ServiceRegistration
         // 2. Register Global RFC 7807 Exception Handler
         services.AddExceptionHandler<GlobalExceptionHandler>();
         services.AddProblemDetails();
+
+        // Maps a file extension to a MIME type. Used by the local file download endpoint so a stored
+        // image is served as an image rather than as an anonymous byte stream.
+        services.AddSingleton<IContentTypeProvider, FileExtensionContentTypeProvider>();
 
         // 3. Register .resx Localization
         // Without this, IStringLocalizer<T> is not registered and every handler asking for

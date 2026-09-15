@@ -322,7 +322,9 @@ message when a required one is still empty or still holds a placeholder.
   "Storage": {
     "Local": {
       "RootDirectory": "App_Data/uploads",
-      "BaseUrl": "/api/v1/files"
+      "BaseUrl": "/api/v1/files",
+      "SigningKey": "",
+      "UrlExpiryMinutes": 15
     },
     "Supabase": {
       "Url": "",
@@ -341,6 +343,9 @@ Three settings are easy to get wrong:
   limits that gap without a database read on every request.
 - `Storage:Local:RootDirectory` must stay outside `wwwroot`. Anything under `wwwroot` is served by
   `UseStaticFiles` with no authorization check, which would publish every private upload.
+- `Storage:Local:SigningKey` is required as soon as anything is stored on local disk. It is a secret,
+  so supply it the same way as the JWT keys and never commit a real one. See
+  [Local storage signs its own URLs](#local-storage-signs-its-own-urls).
 - Google settings are optional. Email and password login works without them.
 
 ---
@@ -363,6 +368,32 @@ stored name is generated, so a crafted file name cannot escape the storage folde
 
 **A file belongs to nobody until it is attached.** Permission is decided by the entity it hangs off,
 which is why `FileEntity` carries no owner column.
+
+### Local storage signs its own URLs
+
+A cloud provider presigns a URL and receives the bytes itself, so the API is never in the path. Local
+disk has no provider to do either, so `LocalStorageService` fills both roles.
+
+`CreatePresignedUploadUrlAsync` returns a URL back into this API:
+
+```text
+/api/v1/files/content/public/products/{id}.jpg?expires=1789000000&signature=...
+```
+
+The signature is an HMAC over the operation, the path and the expiry, keyed with
+`Storage:Local:SigningKey`. Three details make it hold up:
+
+- **The operation is signed**, so an upload URL cannot be replayed as a download URL.
+- **The path is signed**, so the URL grants access to that one object and nothing else.
+- **The expiry is signed**, so a leaked URL stops working on its own.
+
+`FilesController.UploadContent` and `DownloadContent` sit behind those URLs. Both are
+`[AllowAnonymous]` on purpose: the signature is the credential, which is what lets a browser upload
+straight from a form. They are the only endpoints in the API that move bytes rather than dispatch a
+CQRS request, because there is no business decision to make.
+
+With a cloud provider the bytes never reach the API, so a project that stores everything in the cloud
+can delete both endpoints and `ILocalFileTransferService` with them.
 
 ---
 
