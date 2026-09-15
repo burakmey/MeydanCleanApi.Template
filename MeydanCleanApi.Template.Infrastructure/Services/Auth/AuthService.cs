@@ -26,6 +26,7 @@ namespace MeydanCleanApi.Template.Infrastructure.Services.Auth;
 /// </remarks>
 public sealed class AuthService(
     UserManager<AppUser> userManager,
+    IPasswordHasher<AppUser> passwordHasher,
     ITokenService tokenService,
     IUserSessionService userSessionService,
     IReadRepository<UserAuthProvider, (Guid UserId, int AuthProviderId)> userAuthProviderReadRepository,
@@ -34,7 +35,21 @@ public sealed class AuthService(
     IExternalAuthVerifierResolver verifierResolver,
     ILogger<AuthService> logger) : IAuthService
 {
+    /// <summary>
+    /// Throwaway account and hash used to spend the same time on a login that cannot succeed.
+    /// </summary>
+    /// <remarks>
+    /// Verifying a password is deliberately slow. Skipping it when no account matches would make a
+    /// failed login measurably faster than a wrong password, and that difference alone tells an
+    /// attacker which email addresses are registered. The hash is built once at startup; the cost
+    /// that matters is the verification, which runs per attempt.
+    /// </remarks>
+    private static readonly AppUser DecoyUser = new() { ActiveAuthProviderId = (int)AuthProviderType.Local };
+    private static readonly string DecoyPasswordHash =
+        new PasswordHasher<AppUser>().HashPassword(DecoyUser, Guid.NewGuid().ToString("N"));
+
     private readonly UserManager<AppUser> _userManager = userManager;
+    private readonly IPasswordHasher<AppUser> _passwordHasher = passwordHasher;
     private readonly ITokenService _tokenService = tokenService;
     private readonly IUserSessionService _userSessionService = userSessionService;
     private readonly IReadRepository<UserAuthProvider, (Guid UserId, int AuthProviderId)> _userAuthProviderReadRepository = userAuthProviderReadRepository;
@@ -50,17 +65,22 @@ public sealed class AuthService(
         ArgumentException.ThrowIfNullOrWhiteSpace(password);
 
         // 1. Find the account. Every failure below returns the same error on purpose, so an attacker
-        //    cannot tell "no such user" apart from "wrong password".
+        //    cannot tell "no such user" apart from "wrong password". The same error is not enough on
+        //    its own: a path that skips the password check answers sooner, and that difference is
+        //    just as readable, which is what BurnPasswordVerificationTime is for.
         var user = await _userManager.FindByEmailAsync(email);
         if (user is null)
         {
+            BurnPasswordVerificationTime(password);
             _logger.LogWarning(LogEvents.AuthFailed, "Login failed: no account matches the supplied email.");
             throw InvalidCredentialsException.WithCode();
         }
 
-        // 2. Refuse locked-out accounts before checking the password.
+        // 2. Refuse locked-out accounts before checking the password. This path skips the real
+        //    verification, so it burns the same time to keep "locked out" indistinguishable too.
         if (await _userManager.IsLockedOutAsync(user))
         {
+            BurnPasswordVerificationTime(password);
             _logger.LogWarning(LogEvents.AuthFailed, "Login failed: account {UserId} is locked out.", user.Id);
             throw InvalidCredentialsException.WithCode();
         }
@@ -197,6 +217,17 @@ public sealed class AuthService(
         await _unitOfWork.SaveChangesAsync(ct);
 
         return user;
+    }
+
+    /// <summary>
+    /// Runs a password verification that is known to fail, so every rejected login costs the same.
+    /// </summary>
+    /// <remarks>
+    /// The result is discarded on purpose. Only the time it takes matters.
+    /// </remarks>
+    private void BurnPasswordVerificationTime(string password)
+    {
+        _ = _passwordHasher.VerifyHashedPassword(DecoyUser, DecoyPasswordHash, password);
     }
 
     /// <summary>

@@ -13,7 +13,7 @@ namespace MeydanCleanApi.Template.WebApi.Middlewares;
 /// <para>
 /// <strong>Key Features:</strong>
 /// 1. Reads incoming <c>X-Correlation-ID</c> header or generates a new Guid string if missing/malformed.
-/// 2. Limits header length to 128 characters to prevent log injection attacks.
+/// 2. Accepts only short, plain identifiers, so a client cannot write its own lines into the log.
 /// 3. Pushes property to Serilog <c>LogContext</c> so all log statements automatically include <c>CorrelationId</c>.
 /// 4. Appends header to outgoing response headers early so error responses also carry the correlation trace ID.
 /// </para>
@@ -26,7 +26,7 @@ public sealed class CorrelationIdMiddleware(RequestDelegate next)
     /// <summary>The HTTP header carrying the correlation ID in both request and response.</summary>
     public const string HeaderName = "X-Correlation-ID";
 
-    /// <summary>Maximum allowed length for inbound correlation ID header to prevent log injection abuse.</summary>
+    /// <summary>Maximum allowed length for an inbound correlation ID.</summary>
     private const int MaxLength = 128;
 
     private readonly RequestDelegate _next = next;
@@ -58,13 +58,35 @@ public sealed class CorrelationIdMiddleware(RequestDelegate next)
         if (context.Request.Headers.TryGetValue(HeaderName, out var header))
         {
             var candidate = header.ToString();
-            if (!string.IsNullOrWhiteSpace(candidate) && candidate.Length <= MaxLength)
+            if (candidate.Length is > 0 and <= MaxLength && IsPlainIdentifier(candidate))
             {
                 return candidate;
             }
         }
 
         return Guid.NewGuid().ToString("N");
+    }
+
+    /// <summary>
+    /// Returns whether the value is safe to write into a log line and a response header.
+    /// </summary>
+    /// <remarks>
+    /// A length limit alone is not enough. The value is written to the log file, so a carriage return
+    /// inside it would end the current line and let the caller compose a convincing entry of its own.
+    /// Correlation ids are machine-generated identifiers, so accepting only letters, digits, dash and
+    /// underscore costs nothing and leaves no character that could mean something to a reader.
+    /// </remarks>
+    private static bool IsPlainIdentifier(string value)
+    {
+        foreach (var character in value)
+        {
+            if (!char.IsAsciiLetterOrDigit(character) && character != '-' && character != '_')
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 }
 

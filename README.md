@@ -78,9 +78,12 @@ Cloning this repository and renaming the projects by hand works too.
 
 ### 2. Supply the settings
 
-No secret is committed, so a fresh project does not start until the values below exist. Run these
-from the `*.WebApi` folder. They are stored outside the repository, so nothing typed here can be
-committed by accident:
+`appsettings.Development.json` and `.env.example` carry throwaway signing keys so a clone runs
+straight away. They are in the repository, which means they are public, so the API refuses to start
+outside Development while any of them is still configured and names the key at fault.
+
+Nothing else is committed. Run these from the `*.WebApi` folder; they are stored outside the
+repository, so nothing typed here can be committed by accident:
 
 ```bash
 dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Host=localhost;Port=5432;Database=meydanclean_db;Username=postgres;Password=YOUR_PASSWORD"

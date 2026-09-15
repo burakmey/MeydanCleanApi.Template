@@ -221,6 +221,21 @@ jobs:
             *) echo "::error::seeding did not run: $products"; fail=1 ;;
           esac
 
+          # A correlation id the caller chose is echoed back, but only when it is a plain
+          # identifier. Anything else is replaced, so nobody can shape what lands in the log.
+          echoed=$(curl -s -o /dev/null -D - --max-time 15 \
+            -H 'X-Correlation-ID: ci-check-1' "$base/health" | tr -d '\r' \
+            | sed -n 's/^[Xx]-[Cc]orrelation-[Ii][Dd]: //p')
+          [ "$echoed" = "ci-check-1" ] || { echo "::error::correlation id not echoed: '$echoed'"; fail=1; }
+
+          rejected=$(curl -s -o /dev/null -D - --max-time 15 \
+            -H 'X-Correlation-ID: not a plain id' "$base/health" | tr -d '\r' \
+            | sed -n 's/^[Xx]-[Cc]orrelation-[Ii][Dd]: //p')
+          case "$rejected" in
+            *" "*|"") echo "::error::unsafe correlation id was not replaced: '$rejected'"; fail=1 ;;
+            *) echo "  ok    unsafe correlation id replaced" ;;
+          esac
+
           exit $fail
 
       # Proves migrations ran, the admin was seeded, and a token is actually issued.
