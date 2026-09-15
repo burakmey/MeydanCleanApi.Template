@@ -80,9 +80,19 @@ public static class StartupCheckExtensions
     /// Verifies database connectivity and applies any pending EF Core migrations.
     /// </summary>
     /// <remarks>
+    /// <para>
     /// This deliberately throws instead of only logging. An API that starts without a usable database
     /// reports itself as healthy and then fails every request, which is much harder to diagnose than
     /// a clear crash at boot.
+    /// </para>
+    /// <para>
+    /// <strong>Migrating here suits one instance, not several.</strong> Start two replicas at once and
+    /// both find the same pending migration and both try to apply it; the loser fails on a table that
+    /// already exists. It is convenient on a laptop and in the single-container Compose setup, and it
+    /// is the first thing to move once the API scales out: run <c>dotnet ef database update</c> as a
+    /// deployment step and delete the <c>MigrateAsync</c> call below, leaving only the check that the
+    /// schema is current.
+    /// </para>
     /// </remarks>
     /// <param name="app">The application host.</param>
     /// <exception cref="InvalidOperationException">Thrown when the database cannot be reached.</exception>

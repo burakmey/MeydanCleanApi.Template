@@ -32,12 +32,14 @@ public sealed class GetFilesPagedQueryHandler(
         ArgumentNullException.ThrowIfNull(request);
 
         // 1. Build the filter from whichever optional criteria were supplied.
+        //    The term is lowered on both sides because LIKE in PostgreSQL is case sensitive, so
+        //    matching it as typed would miss a file stored under a differently-cased name.
         var statusId = request.StatusId;
-        var searchTerm = request.SearchTerm;
+        var searchTerm = request.SearchTerm?.Trim().ToLowerInvariant();
 
         Expression<Func<FileEntity, bool>> filter = file =>
             (!statusId.HasValue || file.FileStatusId == statusId.Value)
-            && (string.IsNullOrWhiteSpace(searchTerm) || file.OriginalFileName.Contains(searchTerm));
+            && (string.IsNullOrWhiteSpace(searchTerm) || file.OriginalFileName.ToLower().Contains(searchTerm));
 
         // 2. Page at the database level.
         var pagedEntities = await _fileReadRepository.GetPagedAsync(request.Page, predicate: filter, ct: ct);

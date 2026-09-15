@@ -24,6 +24,20 @@ public sealed class GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logge
         ArgumentNullException.ThrowIfNull(httpContext);
         ArgumentNullException.ThrowIfNull(exception);
 
+        // Once the first byte is on the wire the status code and headers are already sent, and
+        // writing again throws on top of the original failure. Nothing useful can be returned here,
+        // so log it and let the host tear the connection down rather than mask the real exception.
+        if (httpContext.Response.HasStarted)
+        {
+            _logger.LogError(
+                exception,
+                "Unhandled System Crash after the response had started at {Method} {Path}",
+                httpContext.Request.Method,
+                httpContext.Request.Path);
+
+            return false;
+        }
+
         var localizer = httpContext.RequestServices.GetRequiredService<ILocalizationService<ErrorMessages>>();
         var validationLocalizer = httpContext.RequestServices.GetRequiredService<ILocalizationService<ValidationMessages>>();
         ErrorResponse response;
