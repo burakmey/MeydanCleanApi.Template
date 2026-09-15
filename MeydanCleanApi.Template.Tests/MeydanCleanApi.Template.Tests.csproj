@@ -23,9 +23,9 @@
       No mocking library yet: every test here builds its subject from real collaborators or a small
       fake. Add one when a test needs a dependency that cannot be constructed cheaply.
     -->
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.10.0" />
-    <PackageReference Include="xunit" Version="2.9.3" />
-    <PackageReference Include="xunit.runner.visualstudio" Version="3.1.5" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" />
   </ItemGroup>
 
   <ItemGroup>
