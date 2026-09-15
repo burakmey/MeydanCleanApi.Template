@@ -63,7 +63,7 @@ public static class StartupCheckExtensions
         var configuration = scope.ServiceProvider.GetRequiredService<IConfiguration>();
 
         var offendingKeys = GuardedSecretKeys
-            .Where(key => PlaceholderSecrets.Contains(configuration[key], StringComparer.Ordinal))
+            .Where(key => configuration[key] is { } value && PlaceholderSecrets.Contains(value, StringComparer.Ordinal))
             .ToList();
 
         if (offendingKeys.Count > 0)

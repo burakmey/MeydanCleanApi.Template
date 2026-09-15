@@ -29,6 +29,12 @@ public sealed class FilesController(
     ILocalFileTransferService localFileTransfer,
     IContentTypeProvider contentTypeProvider) : ApiControllerBase
 {
+    /// <summary>
+    /// Route for the two local transfer endpoints, built from the segment the provider signs into its
+    /// URLs so the two cannot drift apart.
+    /// </summary>
+    private const string ContentRoute = ILocalFileTransferService.ContentPathSegment + "/{**path}";
+
     private readonly ILocalFileTransferService _localFileTransfer = localFileTransfer;
     private readonly IContentTypeProvider _contentTypeProvider = contentTypeProvider;
 
@@ -105,7 +111,7 @@ public sealed class FilesController(
     /// stores everything in the cloud can delete both.
     /// </para>
     /// </remarks>
-    [HttpPut($"{ILocalFileTransferService.ContentPathSegment}/{{**path}}")]
+    [HttpPut(ContentRoute)]
     [AllowAnonymous]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
@@ -131,7 +137,7 @@ public sealed class FilesController(
     /// Anonymous for the same reason as the upload endpoint: the signed, expiring query string is what
     /// authorizes the request.
     /// </remarks>
-    [HttpGet($"{ILocalFileTransferService.ContentPathSegment}/{{**path}}")]
+    [HttpGet(ContentRoute)]
     [AllowAnonymous]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
