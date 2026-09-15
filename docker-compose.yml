@@ -126,6 +126,10 @@ services:
       # anyone, with no login check.
       Storage__Local__RootDirectory: App_Data/uploads
       Storage__Local__BaseUrl: /api/v1/files
+      # Signs the upload and download URLs the API hands out for local files. There is no
+      # cloud provider to sign them here, so without this key uploads are refused.
+      Storage__Local__SigningKey: ${API_STORAGE_SIGNING_KEY:?API_STORAGE_SIGNING_KEY missing in .env}
+      Storage__Local__UrlExpiryMinutes: ${API_STORAGE_URL_EXPIRY_MINUTES:-15}
 
       # -- Storage: Supabase (optional) ---------------------------------------
       # Empty by default. Supabase is only set up when something asks for it, so

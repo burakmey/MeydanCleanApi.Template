@@ -81,7 +81,12 @@ public static class ServiceRegistration
         // storage client, so there is nothing per-request to keep. Registering the providers as
         // Scoped while the resolver is Singleton would be a captive dependency and the app would
         // refuse to start.
-        services.AddSingleton<IFileStorageService, LocalStorageService>();
+        // Registered once and exposed under both of its interfaces. The same instance has to serve
+        // both, because the key that signs a local URL must be the one that later verifies it.
+        services.AddSingleton<LocalStorageService>();
+        services.AddSingleton<IFileStorageService>(sp => sp.GetRequiredService<LocalStorageService>());
+        services.AddSingleton<ILocalFileTransferService>(sp => sp.GetRequiredService<LocalStorageService>());
+
         services.AddSingleton<IFileStorageService, SupabaseStorageService>();
         services.AddSingleton<IFileStorageHandlerResolver, FileStorageHandlerResolver>();
         services.AddSingleton<IFileStorageHandler, FileStorageHandler>();

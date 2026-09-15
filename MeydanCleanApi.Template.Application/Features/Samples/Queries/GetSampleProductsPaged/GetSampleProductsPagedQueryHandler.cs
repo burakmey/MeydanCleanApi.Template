@@ -25,13 +25,18 @@ public sealed class GetSampleProductsPagedQueryHandler(
     /// <inheritdoc />
     public async Task<BaseResponse<GetSampleProductsPagedQueryResponse>> Handle(GetSampleProductsPagedQuery request, CancellationToken ct)
     {
-        Expression<Func<SampleProduct, bool>>? filter = !string.IsNullOrWhiteSpace(request.SearchTerm)
-            ? p => p.Name.Contains(request.SearchTerm)
-            : null;
+        // Lowered on both sides, because LIKE in PostgreSQL is case sensitive: matching the term as
+        // typed would mean a search for "iphone" never finds a product stored as "iPhone". Lowering
+        // the column also rules out the plain index on it, so a table large enough to feel that wants
+        // an index on lower(name) to match.
+        Expression<Func<SampleProduct, bool>>? filter = null;
 
-        // Files are part of the response DTO, so they have to be loaded with the products.
-        // Without the Include, EF returns the products with an empty Files collection and the API
-        // silently reports that every product has no attachments.
+        if (!string.IsNullOrWhiteSpace(request.SearchTerm))
+        {
+            var searchTerm = request.SearchTerm.Trim().ToLowerInvariant();
+            filter = product => product.Name.ToLower().Contains(searchTerm);
+        }
+
         // Files are part of the response DTO, so they have to be loaded with the products.
         // Without the include, EF returns an empty collection and the API silently reports that
         // every product has no attachments.

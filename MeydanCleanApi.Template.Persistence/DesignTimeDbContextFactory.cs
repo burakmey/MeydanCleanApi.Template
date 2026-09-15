@@ -1,3 +1,4 @@
+using MeydanCleanApi.Template.Application.Abstractions.Clock;
 using MeydanCleanApi.Template.Domain.Exceptions;
 using MeydanCleanApi.Template.Persistence.Contexts;
 using Microsoft.EntityFrameworkCore.Design;
@@ -39,6 +40,19 @@ public sealed class DesignTimeDbContextFactory : IDesignTimeDbContextFactory<App
         var builder = new DbContextOptionsBuilder<ApplicationDbContext>();
         builder.UseNpgsql(connectionString, b => b.MigrationsAssembly(typeof(ApplicationDbContext).Assembly.FullName));
 
-        return new ApplicationDbContext(builder.Options);
+        return new ApplicationDbContext(builder.Options, new SystemClock());
+    }
+
+    /// <summary>
+    /// Clock handed to the context when the EF Core CLI builds it.
+    /// </summary>
+    /// <remarks>
+    /// The tooling only reads the model to produce a migration; it never saves, so this is never asked
+    /// for the time. It exists because the context takes a clock at runtime, and there is no dependency
+    /// injection container here to supply the real one.
+    /// </remarks>
+    private sealed class SystemClock : IDateTimeService
+    {
+        public DateTime UtcNow => DateTime.UtcNow;
     }
 }

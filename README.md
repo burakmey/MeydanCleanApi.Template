@@ -78,9 +78,12 @@ Cloning this repository and renaming the projects by hand works too.
 
 ### 2. Supply the settings
 
-No secret is committed, so a fresh project does not start until the values below exist. Run these
-from the `*.WebApi` folder. They are stored outside the repository, so nothing typed here can be
-committed by accident:
+`appsettings.Development.json` and `.env.example` carry throwaway signing keys so a clone runs
+straight away. They are in the repository, which means they are public, so the API refuses to start
+outside Development while any of them is still configured and names the key at fault.
+
+Nothing else is committed. Run these from the `*.WebApi` folder; they are stored outside the
+repository, so nothing typed here can be committed by accident:
 
 ```bash
 dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Host=localhost;Port=5432;Database=meydanclean_db;Username=postgres;Password=YOUR_PASSWORD"
@@ -178,10 +181,14 @@ containers and volumes are for, daily commands, disk cleanup and troubleshooting
 | [Infrastructure](MeydanCleanApi.Template.Infrastructure/README.md) | Authentication, tokens, refresh cookies, file storage providers |
 | [Persistence](MeydanCleanApi.Template.Persistence/README.md) | DbContext, EF Core mappings, repositories, transactions, seeders |
 | [WebApi](MeydanCleanApi.Template.WebApi/README.md) | Controllers, middleware order, authorization policies, startup behaviour, configuration and secrets |
+| [Tests](MeydanCleanApi.Template.Tests/README.md) | What the unit tests cover, what they deliberately do not, and why |
 | [DOCKER.md](DOCKER.md) | Everything about running this project in containers |
 
-There are no tests yet. Adding a test project is the first thing worth doing, starting with one that
-builds the DI container with scope validation enabled.
+Run the tests with `dotnet test MeydanCleanApi.Template.slnx`. CI runs them on every push.
+
+They are unit tests only: no database, no HTTP host. Anything needing real SQL — audit timestamps,
+the soft-delete query filter, repository paging — is still uncovered and wants an integration project
+with a PostgreSQL container.
 
 ---
 

@@ -3,5 +3,6 @@
   <Project Path="MeydanCleanApi.Template.Domain/MeydanCleanApi.Template.Domain.csproj" />
   <Project Path="MeydanCleanApi.Template.Infrastructure/MeydanCleanApi.Template.Infrastructure.csproj" />
   <Project Path="MeydanCleanApi.Template.Persistence/MeydanCleanApi.Template.Persistence.csproj" />
+  <Project Path="MeydanCleanApi.Template.Tests/MeydanCleanApi.Template.Tests.csproj" />
   <Project Path="MeydanCleanApi.Template.WebApi/MeydanCleanApi.Template.WebApi.csproj" />
 </Solution>

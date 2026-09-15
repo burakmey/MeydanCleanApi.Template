@@ -221,6 +221,21 @@ jobs:
             *) echo "::error::seeding did not run: $products"; fail=1 ;;
           esac
 
+          # A correlation id the caller chose is echoed back, but only when it is a plain
+          # identifier. Anything else is replaced, so nobody can shape what lands in the log.
+          echoed=$(curl -s -o /dev/null -D - --max-time 15 \
+            -H 'X-Correlation-ID: ci-check-1' "$base/health" | tr -d '\r' \
+            | sed -n 's/^[Xx]-[Cc]orrelation-[Ii][Dd]: //p')
+          [ "$echoed" = "ci-check-1" ] || { echo "::error::correlation id not echoed: '$echoed'"; fail=1; }
+
+          rejected=$(curl -s -o /dev/null -D - --max-time 15 \
+            -H 'X-Correlation-ID: not a plain id' "$base/health" | tr -d '\r' \
+            | sed -n 's/^[Xx]-[Cc]orrelation-[Ii][Dd]: //p')
+          case "$rejected" in
+            *" "*|"") echo "::error::unsafe correlation id was not replaced: '$rejected'"; fail=1 ;;
+            *) echo "  ok    unsafe correlation id replaced" ;;
+          esac
+
           exit $fail
 
       # Proves migrations ran, the admin was seeded, and a token is actually issued.
@@ -250,6 +265,56 @@ jobs:
           details=$(curl -s -o /dev/null -w '%{http_code}' --max-time 15 \
             -H "Authorization: Bearer $token" "$base/health/details")
           [ "$details" = "200" ] || { echo "::error::/health/details with an admin token returned $details"; fail=1; }
+
+          exit $fail
+
+      # The local storage provider has no cloud service behind it: the API signs its own
+      # upload URLs and receives the bytes itself. This walks the whole round trip, which is
+      # what catches a signed URL pointing at a route that does not exist.
+      - name: Check the local file upload round trip
+        run: |
+          base=http://localhost:5080
+          fail=0
+
+          body='{"email":"admin@example.com","password":"Adm1n!Local_2026"}'
+          token=$(curl -s --max-time 15 -H 'Content-Type: application/json' \
+            -d "$body" "$base/api/v1/auth/login" \
+            | sed -n 's/.*"accessToken":"\([^"]*\)".*/\1/p')
+
+          [ -n "$token" ] || { echo "::error::could not log in to test uploads"; exit 1; }
+
+          # 1. Ask for an upload URL.
+          staged=$(curl -s --max-time 15 -H "Authorization: Bearer $token" \
+            -H 'Content-Type: application/json' \
+            -d '{"originalFileName":"ci.txt","contentType":"text/plain","sizeInBytes":8,"container":"temp"}' \
+            "$base/api/v1/files/upload-url")
+
+          fileId=$(echo "$staged" | sed -n 's/.*"fileId":"\([^"]*\)".*/\1/p')
+          uploadUrl=$(echo "$staged" | sed -n 's/.*"uploadUrl":"\([^"]*\)".*/\1/p')
+
+          if [ -z "$fileId" ] || [ -z "$uploadUrl" ]; then
+            echo "::error::upload-url did not return a staged file: $staged"
+            exit 1
+          fi
+          echo "  ok    upload url issued"
+
+          # 2. A tampered signature must be refused before any bytes are written.
+          tampered=$(curl -s -o /dev/null -w '%{http_code}' --max-time 15 \
+            -X PUT --data-binary 'hello ci' "$base${uploadUrl}tampered")
+          [ "$tampered" = "403" ] || { echo "::error::tampered signature returned $tampered, expected 403"; fail=1; }
+
+          # 3. The real URL must accept the bytes.
+          uploaded=$(curl -s -o /dev/null -w '%{http_code}' --max-time 15 \
+            -X PUT --data-binary 'hello ci' "$base$uploadUrl")
+          [ "$uploaded" = "204" ] || { echo "::error::upload returned $uploaded, expected 204"; fail=1; }
+
+          # 4. Confirming proves the API can see the bytes it just stored.
+          confirmed=$(curl -s --max-time 15 -X PUT -H "Authorization: Bearer $token" \
+            "$base/api/v1/files/$fileId/confirm")
+          case "$confirmed" in
+            *'"isSucceed":true'*) echo "  ok    upload confirmed" ;;
+            *) echo "::error::confirm did not succeed: $confirmed"; fail=1 ;;
+          esac
 
           exit $fail
 

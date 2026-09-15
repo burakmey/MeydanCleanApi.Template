@@ -57,6 +57,11 @@ public static class Program
         // ===================================================================================
         var app = builder.Build();
 
+        // Refuse to run outside Development while a signing key published in this repository is still
+        // configured. Checked before anything else, because an API that starts with a public key looks
+        // perfectly healthy while anybody can forge a token for it.
+        app.EnsureProductionSecretsAreReal();
+
         // Verify the database is reachable and that the schema has been migrated.
         // Startup stops here if the database cannot be used, so the API never reports healthy while broken.
         await app.PerformStartupChecksAsync();

@@ -1,11 +1,8 @@
-using MeydanCleanApi.Template.Application.Abstractions.Auth;
 using MeydanCleanApi.Template.Application.Abstractions.Messaging;
 using MeydanCleanApi.Template.Application.Abstractions.Repositories;
 using MeydanCleanApi.Template.Application.Abstractions.Storage;
-using MeydanCleanApi.Template.Application.Common.Security;
 using MeydanCleanApi.Template.Domain.Constants;
 using MeydanCleanApi.Template.Domain.Entities.Files;
-using MeydanCleanApi.Template.Domain.Exceptions;
 
 namespace MeydanCleanApi.Template.Application.Features.Files.Commands.ConfirmFileUpload;
 
@@ -18,12 +15,10 @@ namespace MeydanCleanApi.Template.Application.Features.Files.Commands.ConfirmFil
 public sealed class ConfirmFileUploadCommandHandler(
     IReadRepository<FileEntity, Guid> fileReadRepository,
     IFileStorageCoordinator coordinator,
-    ICurrentUserService currentUserService,
     IUnitOfWork unitOfWork) : IRequestHandler<ConfirmFileUploadCommand, BaseResponse<ConfirmFileUploadCommandResponse>>
 {
     private readonly IReadRepository<FileEntity, Guid> _fileReadRepository = fileReadRepository;
     private readonly IFileStorageCoordinator _coordinator = coordinator;
-    private readonly ICurrentUserService _currentUserService = currentUserService;
     private readonly IUnitOfWork _unitOfWork = unitOfWork;
 
     /// <inheritdoc />

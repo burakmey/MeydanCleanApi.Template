@@ -128,9 +128,9 @@ public class ReadRepository<T, TKey> : IReadRepository<T, TKey> where T : BaseEn
 
         // Skip/Take without an ORDER BY has no defined result in PostgreSQL: the same row can appear
         // on two pages, or on none. Sort newest first, then by Id to break ties between rows created
-        // in the same instant. Pass configureQuery if a feature needs a different order; the ordering
-        // applied there wins because it is applied first.
-        if (query.Expression.Type != typeof(IOrderedQueryable<T>))
+        // in the same instant. Pass configureQuery if a feature needs a different order: this default
+        // is only applied when that hook did not order the query itself.
+        if (!HasOrdering(query.Expression))
         {
             query = query.OrderByDescending(entity => entity.CreatedAt).ThenBy(entity => entity.Id);
         }
@@ -162,6 +162,33 @@ public class ReadRepository<T, TKey> : IReadRepository<T, TKey> where T : BaseEn
         return predicate is null
             ? await _dbSet.CountAsync(ct)
             : await _dbSet.CountAsync(predicate, ct);
+    }
+
+    /// <summary>
+    /// Returns whether the query already sorts its rows.
+    /// </summary>
+    /// <param name="expression">The expression tree behind the query.</param>
+    /// <remarks>
+    /// Walking the tree rather than testing its outermost type, because only the last call is visible
+    /// there: a hook that sorted and then filtered looks unsorted, and appending a default sort to
+    /// that would silently replace the order the caller asked for. EF Core lets <c>OrderBy</c> reset
+    /// any earlier ordering, so the default has to be skipped rather than added on top.
+    /// </remarks>
+    private static bool HasOrdering(Expression expression)
+    {
+        while (expression is MethodCallExpression call && call.Method.DeclaringType == typeof(Queryable))
+        {
+            if (call.Method.Name.StartsWith("OrderBy", StringComparison.Ordinal)
+                || call.Method.Name.StartsWith("ThenBy", StringComparison.Ordinal))
+            {
+                return true;
+            }
+
+            // Every Queryable operator takes the previous query as its first argument.
+            expression = call.Arguments[0];
+        }
+
+        return false;
     }
 
     /// <summary>

@@ -1,5 +1,6 @@
 using MeydanCleanApi.Template.Application.Abstractions.Auth;
 using MeydanCleanApi.Template.Application.Abstractions.Clock;
+using MeydanCleanApi.Template.Application.Abstractions.Repositories;
 using MeydanCleanApi.Template.Domain.Exceptions;
 using MeydanCleanApi.Template.Persistence.Contexts;
 
@@ -9,6 +10,11 @@ namespace MeydanCleanApi.Template.Persistence.Services;
 /// EF Core implementation of <see cref="IUserSessionService"/>.
 /// </summary>
 /// <remarks>
+/// Saves go through <see cref="IUnitOfWork"/> rather than the context directly, so a constraint
+/// violation here is reported the same way as anywhere else in the application instead of escaping
+/// as an unexplained 500.
+/// </remarks>
+/// <remarks>
 /// The session is kept on the <c>AppUsers</c> row itself, which means one active session per user:
 /// signing in on a second device replaces the first. To support several devices at once, move
 /// <c>RefreshTokenHash</c>, <c>RefreshTokenExpiration</c> and <c>CurrentJti</c> into their own
@@ -16,9 +22,11 @@ namespace MeydanCleanApi.Template.Persistence.Services;
 /// </remarks>
 public sealed class UserSessionService(
     ApplicationDbContext context,
+    IUnitOfWork unitOfWork,
     IDateTimeService dateTimeService) : IUserSessionService
 {
     private readonly ApplicationDbContext _context = context;
+    private readonly IUnitOfWork _unitOfWork = unitOfWork;
     private readonly IDateTimeService _dateTimeService = dateTimeService;
 
     /// <inheritdoc />
@@ -34,7 +42,7 @@ public sealed class UserSessionService(
         user.RefreshTokenExpiration = expiresAtUtc;
         user.CurrentJti = jti;
 
-        await _context.SaveChangesAsync(ct);
+        await _unitOfWork.SaveChangesAsync(ct);
     }
 
     /// <inheritdoc />
@@ -62,7 +70,7 @@ public sealed class UserSessionService(
         if (user is null) return;
 
         ClearSession(user);
-        await _context.SaveChangesAsync(ct);
+        await _unitOfWork.SaveChangesAsync(ct);
     }
 
     /// <inheritdoc />
@@ -72,7 +80,7 @@ public sealed class UserSessionService(
         if (user is null) return;
 
         ClearSession(user);
-        await _context.SaveChangesAsync(ct);
+        await _unitOfWork.SaveChangesAsync(ct);
     }
 
     /// <inheritdoc />
